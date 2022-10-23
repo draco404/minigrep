@@ -2,6 +2,9 @@ use std::error::Error;
 use std::fs;
 use std::env;
 
+use regex::Regex;
+use regex::RegexBuilder;
+
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(&config.file_path)?;
 
@@ -42,11 +45,17 @@ impl Config {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    contents.lines().filter(|line| line.contains(&query)).collect()
+    let re = Regex::new(&query).unwrap();
+    contents.lines().filter(|line| re.is_match(line)).collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    contents.lines().filter(|line| line.to_lowercase().contains(&query.to_lowercase())).collect()
+    // let re = Regex::new(&query).unwrap();
+    let re = RegexBuilder::new(query)
+        .case_insensitive(true).build().unwrap();
+
+    contents.lines().filter(|line| re.is_match(&line)).collect()
+    // contents.lines().filter(|line| line.to_lowercase().contains(&query.to_lowercase())).collect()
 }
 
 #[cfg(test)]
@@ -55,13 +64,22 @@ mod test {
 
     #[test]
     fn case_sensitive() {
-        let query = "duct";
+        let query = "^T";
         let contents = "\
-Rust:
-safe, fast, productive.
-Pick three.";
+I'm nobody! Who are you?
+Are you nobody, too?
+Then there's a pair of us - don't tell!
+They'd banish us, you know.
 
-        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+How dreary to be somebody!
+How public, like a frog
+To tell your name the livelong day
+To an admiring bog!";
+
+        assert_eq!(vec!["Then there's a pair of us - don't tell!",
+        "They'd banish us, you know.",
+        "To tell your name the livelong day",
+        "To an admiring bog!"], search(query, contents));
     }
 
     #[test]
@@ -74,4 +92,5 @@ Pick three.
 Trust me.";
         assert_eq!(vec!["Rust:", "Trust me."], search_case_insensitive(query, contents));
     }
+
 }
