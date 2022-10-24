@@ -3,28 +3,33 @@ use std::fs;
 use std::env;
 use clap::{arg, command, ArgAction};
 
+use colored::Colorize;
 use regex::RegexBuilder;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(&config.file_path)?;
-
     let results = search(&config.query, &contents, config.ignore_case);
 
     for line in results {
+        let (start, end, text) = match_regex(line, &config.query);
+        let mut line = line.to_string();
+        line.replace_range(start..end, &text.red().to_string());
         println!("{}", line);
-        match_regex(line, &config.query);
     }
     Ok(())
 }
 
-pub fn match_regex(text: &str, query: &str) {
+pub fn match_regex(text: &str, query: &str) -> (usize, usize, String) {
     let re = RegexBuilder::new(query)
         .case_insensitive(true).build().unwrap();
     
     let matched = re.find(text).unwrap();
+    let mrange = matched.start()..matched.end();
+    let original = text[mrange].to_string();
 
-    println!("{}, {}", matched.start(), matched.end());
+    (matched.start(), matched.end(), original)
 }
+
 
 pub struct Config {
     pub query: String,
