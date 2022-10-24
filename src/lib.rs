@@ -3,22 +3,27 @@ use std::fs;
 use std::env;
 use clap::{arg, command, ArgAction};
 
-use regex::Regex;
 use regex::RegexBuilder;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(&config.file_path)?;
 
-    let results = if config.ignore_case {
-        search_case_insensitive(&config.query, &contents)
-    } else {
-        search(&config.query, &contents)
-    };
+    let results = search(&config.query, &contents, config.ignore_case);
 
     for line in results {
         println!("{}", line);
+        match_regex(line, &config.query);
     }
     Ok(())
+}
+
+pub fn match_regex(text: &str, query: &str) {
+    let re = RegexBuilder::new(query)
+        .case_insensitive(true).build().unwrap();
+    
+    let matched = re.find(text).unwrap();
+
+    println!("{}, {}", matched.start(), matched.end());
 }
 
 pub struct Config {
@@ -56,15 +61,10 @@ impl Config {
     } 
 }
 
-pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let re = Regex::new(&query).unwrap();
-    contents.lines().filter(|line| re.is_match(line)).collect()
-}
-
-pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+pub fn search<'a>(query: &str, contents: &'a str, sensitive: bool) -> Vec<&'a str> {
     // let re = Regex::new(&query).unwrap();
     let re = RegexBuilder::new(query)
-        .case_insensitive(true).build().unwrap();
+        .case_insensitive(sensitive).build().unwrap();
 
     contents.lines().filter(|line| re.is_match(&line)).collect()
     // contents.lines().filter(|line| line.to_lowercase().contains(&query.to_lowercase())).collect()
@@ -91,7 +91,7 @@ To an admiring bog!";
         assert_eq!(vec!["Then there's a pair of us - don't tell!",
         "They'd banish us, you know.",
         "To tell your name the livelong day",
-        "To an admiring bog!"], search(query, contents));
+        "To an admiring bog!"], search(query, contents, true));
     }
 
     #[test]
@@ -102,7 +102,7 @@ Rust:
 safe, fast, productive.
 Pick three.
 Trust me.";
-        assert_eq!(vec!["Rust:", "Trust me."], search_case_insensitive(query, contents));
+        assert_eq!(vec!["Rust:", "Trust me."], search(query, contents, false));
     }
 
 }
