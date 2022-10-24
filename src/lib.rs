@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs;
 use std::env;
-use clap::{arg, command, ArgAction, Parser};
+use clap::{arg, command, ArgAction};
 
 use regex::Regex;
 use regex::RegexBuilder;
@@ -19,19 +19,6 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         println!("{}", line);
     }
     Ok(())
-}
-
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-pub struct Args {
-    #[arg(short, long, required = true)]
-    pub query: String,
-
-    #[arg(short, long, required = false)]
-    pub file_path: String,
-
-    #[arg(short, long, action)]
-    pub ignore_case: bool,
 }
 
 pub struct Config {
