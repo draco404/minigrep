@@ -1,7 +1,13 @@
 [package]
 name = "minigrep"
 version = "0.1.0"
+authors = ["Alejandro V.  alejandrovieyra7@gmail.com"]
+description = "A tool to search text in files"
+readme = "README.md"
 edition = "2021"
+repository = "https://github.com/draco404/minigrep"
+keywords = ["cli", "search"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
