@@ -1,3 +1,0 @@
-Rust:
-safe, fast, productive.
-Pick three.

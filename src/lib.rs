@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fs;
 use std::env;
+use clap::{arg, command, ArgAction, Parser};
 
 use regex::Regex;
 use regex::RegexBuilder;
@@ -9,15 +10,28 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(&config.file_path)?;
 
     let results = if config.ignore_case {
-        search(&config.query, &contents)
-    } else {
         search_case_insensitive(&config.query, &contents)
+    } else {
+        search(&config.query, &contents)
     };
 
     for line in results {
         println!("{}", line);
     }
     Ok(())
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+pub struct Args {
+    #[arg(short, long, required = true)]
+    pub query: String,
+
+    #[arg(short, long, required = false)]
+    pub file_path: String,
+
+    #[arg(short, long, action)]
+    pub ignore_case: bool,
 }
 
 pub struct Config {
@@ -27,21 +41,32 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
-        args.next();
-        
-        let query = match args.next() {
+    pub fn new() -> Result<Config, &'static str> {
+        let matches = command!()
+            .version("1.0")
+            .author("Alejandro V. <alejandrovieyraa7@gmail.com>") // requires `cargo` feature
+            .arg(arg!([query] "Word or regex to find").required(true))
+            .arg(arg!([file_path] "File path or folder path").required(false))
+            .arg(
+                arg!([ignore_sensitive] "Ignore case sensitive")
+                    .required(false)
+                    .short('i')
+                    .action(ArgAction::SetTrue)
+            )
+            .get_matches();
+
+        let query = match matches.get_one::<String>("query") {
             Some(arg) => arg,
             None => return Err("Didn't get a query string"),
-        };
-        let file_path = match args.next() {
+        }.to_string();
+        let file_path = match matches.get_one::<String>("file_path") {
             Some(arg) => arg,
             None => return Err("Didn't get a file name"),
-        };
-        let ignore_case = env::var("IGNORE_CASE").is_ok();
+        }.to_string();
 
-        Ok(Config { query, file_path , ignore_case })
-    }
+        let ignore_case = matches.get_flag("ignore_sensitive");
+        Ok(Config { query, file_path, ignore_case })
+    } 
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
