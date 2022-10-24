@@ -1,5 +1,6 @@
 use std::process;
-use minigrep::Config;
+use minigrep::args::Config;
+
 fn main() {
     let config = Config::new().unwrap_or_else(|err| {
         eprintln!("Problem parsing arguments: {err}");
